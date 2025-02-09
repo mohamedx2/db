@@ -73,14 +73,24 @@ func validateDataType(value interface{}, dataType string) bool {
 		_, ok := value.(string)
 		return ok
 	case TypeInt:
-		_, ok := value.(int)
-		return ok
+		// Handle both int and float64 for integers
+		switch v := value.(type) {
+		case float64:
+			// Check if it's a whole number
+			return v == float64(int(v))
+		case int:
+			return true
+		default:
+			return false
+		}
 	case TypeBool:
 		_, ok := value.(bool)
 		return ok
 	case TypeFloat:
-		_, ok := value.(float64)
-		return ok
+		// Accept both float64 and int for float fields
+		_, isFloat := value.(float64)
+		_, isInt := value.(int)
+		return isFloat || isInt
 	case TypeTimestamp:
 		_, ok := value.(time.Time)
 		return ok

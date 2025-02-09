@@ -2,13 +2,22 @@ package main
 
 import (
 	"bufio"
+	"db/api"
 	"db/database"
 	"fmt"
+	"log"
 	"os"
 )
 
 func main() {
 	db := database.NewDatabase("MyDB")
+	server := api.NewServer(db)
+
+	log.Println("Starting server on :8080")
+	if err := server.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("Enhanced Database System")
