@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("Enhanced Database System")
-	fmt.Println("Commands: create-table, insert, select, update, delete, help, exit")
+	fmt.Println("Commands: create-table, insert, select, update, delete, rollback, history, help, exit")
 
 	for {
 		fmt.Print("db> ")
@@ -45,6 +46,10 @@ func main() {
 			insertData(db, scanner)
 		case "select":
 			selectData(db, scanner)
+		case "rollback":
+			rollbackOperation(db)
+		case "history":
+			showHistory(db)
 		default:
 			fmt.Println("Unknown command")
 		}
@@ -159,6 +164,28 @@ func updateData(db *database.Database, scanner *bufio.Scanner) {
 	// Implementation details omitted for brevity
 }
 
+func rollbackOperation(db *database.Database) {
+	if err := db.Rollback(); err != nil {
+		fmt.Printf("Error rolling back: %v\n", err)
+		return
+	}
+	fmt.Println("Operation rolled back successfully")
+}
+
+func showHistory(db *database.Database) {
+	ops := db.GetHistory().GetOperations()
+	if len(ops) == 0 {
+		fmt.Println("No operations in history")
+		return
+	}
+
+	fmt.Println("Operation History:")
+	for i, op := range ops {
+		fmt.Printf("%d. %s on %s at %s\n",
+			i+1, op.Type, op.TableName, op.Timestamp.Format(time.RFC3339))
+	}
+}
+
 func printHelp() {
 	fmt.Println("Available commands:")
 	fmt.Println("  create-table - Create a new table")
@@ -166,6 +193,8 @@ func printHelp() {
 	fmt.Println("  select      - Query data from a table")
 	fmt.Println("  update      - Update existing data")
 	fmt.Println("  delete      - Delete data from a table")
+	fmt.Println("  rollback    - Rollback last operation")
+	fmt.Println("  history     - Show operation history")
 	fmt.Println("  help        - Show this help message")
 	fmt.Println("  exit        - Exit the program")
 }

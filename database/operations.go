@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// Table struct is already declared in database.go
+
 func (t *Table) InsertRow(row Row) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -13,6 +15,43 @@ func (t *Table) InsertRow(row Row) error {
 	}
 
 	t.Rows = append(t.Rows, row)
+	t.db.history.AddOperation(Operation{ // Use t.db instead of db
+		Type:      "insert",
+		TableName: t.Name,
+		Data:      row,
+	})
+	return nil
+}
+
+func (t *Table) rollbackInsert() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	// Remove the last inserted row
+	if len(t.Rows) > 0 {
+		t.Rows = t.Rows[:len(t.Rows)-1]
+	}
+	return nil
+}
+
+func (t *Table) rollbackUpdate(newData, oldData Row) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	for i, row := range t.Rows {
+		if matchConditions(row, newData) {
+			t.Rows[i] = oldData
+			return nil
+		}
+	}
+	return fmt.Errorf("row not found for rollback")
+}
+
+func (t *Table) rollbackDelete(oldData Row) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	t.Rows = append(t.Rows, oldData)
 	return nil
 }
 

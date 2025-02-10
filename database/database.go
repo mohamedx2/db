@@ -15,15 +15,17 @@ const (
 )
 
 type Database struct {
-	Name   string
-	Tables map[string]*Table
-	mutex  sync.RWMutex
+	Name    string
+	Tables  map[string]*Table
+	history *History
+	mutex   sync.RWMutex
 }
 
 type Table struct {
 	Name    string
 	Columns []Column
 	Rows    []Row
+	db      *Database // Add reference to parent database
 	mutex   sync.RWMutex
 }
 
@@ -36,8 +38,9 @@ type Row map[string]interface{}
 
 func NewDatabase(name string) *Database {
 	return &Database{
-		Name:   name,
-		Tables: make(map[string]*Table),
+		Name:    name,
+		Tables:  make(map[string]*Table),
+		history: NewHistory(),
 	}
 }
 
@@ -53,6 +56,7 @@ func (db *Database) CreateTable(name string, columns []Column) error {
 		Name:    name,
 		Columns: columns,
 		Rows:    make([]Row, 0),
+		db:      db, // Set the database reference
 	}
 	return nil
 }
@@ -65,6 +69,40 @@ func (db *Database) GetTable(name string) (*Table, error) {
 		return table, nil
 	}
 	return nil, fmt.Errorf("table %s not found", name)
+}
+
+func (db *Database) Rollback() error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	ops := db.history.GetOperations()
+	if len(ops) == 0 {
+		return fmt.Errorf("no operations to rollback")
+	}
+
+	// Rollback last operation
+	lastOp := ops[len(ops)-1]
+	table, exists := db.Tables[lastOp.TableName]
+	if !exists {
+		return fmt.Errorf("table %s not found", lastOp.TableName)
+	}
+
+	switch lastOp.Type {
+	case "insert":
+		return table.rollbackInsert()
+	case "update":
+		return table.rollbackUpdate(lastOp.Data, lastOp.OldData)
+	case "delete":
+		return table.rollbackDelete(lastOp.OldData)
+	default:
+		return fmt.Errorf("unknown operation type: %s", lastOp.Type)
+	}
+}
+
+func (db *Database) GetHistory() *History {
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+	return db.history
 }
 
 func validateDataType(value interface{}, dataType string) bool {
