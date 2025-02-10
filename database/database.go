@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"db/storage" // Change this line to use module path
 )
 
 const (
@@ -18,6 +20,7 @@ type Database struct {
 	Name    string
 	Tables  map[string]*Table
 	history *History
+	storage *storage.Storage
 	mutex   sync.RWMutex
 }
 
@@ -36,15 +39,77 @@ type Column struct {
 
 type Row map[string]interface{}
 
-func NewDatabase(name string) *Database {
-	return &Database{
+func NewDatabase(name string, dataDir string) (*Database, error) {
+	storage, err := storage.NewStorage(dataDir)
+	if err != nil {
+		return nil, err
+	}
+
+	db := &Database{
 		Name:    name,
 		Tables:  make(map[string]*Table),
 		history: NewHistory(),
+		storage: storage,
 	}
+
+	// Load existing data
+	if err := db.load(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+type persistedData struct {
+	Tables  map[string]*Table `json:"tables"`
+	History []Operation       `json:"history"`
+}
+
+func (db *Database) save() error {
+	db.mutex.RLock()
+	data := persistedData{
+		Tables:  db.Tables,
+		History: db.history.GetOperations(),
+	}
+	db.mutex.RUnlock()
+
+	return db.storage.Save("database.json", data)
+}
+
+func (db *Database) load() error {
+	var data persistedData
+	if err := db.storage.Load("database.json", &data); err != nil {
+		return err
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	if data.Tables != nil {
+		db.Tables = data.Tables
+		// Restore database reference in tables
+		for _, table := range db.Tables {
+			table.db = db
+		}
+	}
+
+	if data.History != nil {
+		for _, op := range data.History {
+			db.history.AddOperation(op)
+		}
+	}
+
+	return nil
 }
 
 func (db *Database) CreateTable(name string, columns []Column) error {
+	if err := db.createTable(name, columns); err != nil {
+		return err
+	}
+	return db.save()
+}
+
+func (db *Database) createTable(name string, columns []Column) error {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 

@@ -7,6 +7,13 @@ import (
 // Table struct is already declared in database.go
 
 func (t *Table) InsertRow(row Row) error {
+	if err := t.insertRow(row); err != nil {
+		return err
+	}
+	return t.db.save()
+}
+
+func (t *Table) insertRow(row Row) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
@@ -73,6 +80,17 @@ func (t *Table) Select(conditions map[string]interface{}) ([]Row, error) {
 }
 
 func (t *Table) Delete(conditions map[string]interface{}) (int, error) {
+	deleted, err := t.delete(conditions)
+	if err != nil {
+		return 0, err
+	}
+	if err := t.db.save(); err != nil {
+		return 0, err
+	}
+	return deleted, nil
+}
+
+func (t *Table) delete(conditions map[string]interface{}) (int, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 

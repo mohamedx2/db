@@ -11,7 +11,12 @@ import (
 )
 
 func main() {
-	db := database.NewDatabase("MyDB")
+	dataDir := "./data" // You can make this configurable
+	db, err := database.NewDatabase("MyDB", dataDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	server := api.NewServer(db)
 
 	log.Println("Starting server on :8080")

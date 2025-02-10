@@ -1,0 +1,41 @@
+{
+  "tables": {
+    "users": {
+      "Name": "users",
+      "Columns": [
+        {
+          "Name": "id",
+          "DataType": "int"
+        },
+        {
+          "Name": "name",
+          "DataType": "string"
+        },
+        {
+          "Name": "active",
+          "DataType": "bool"
+        }
+      ],
+      "Rows": [
+        {
+          "active": true,
+          "id": 1,
+          "name": "John Doe"
+        }
+      ]
+    }
+  },
+  "history": [
+    {
+      "Type": "insert",
+      "TableName": "users",
+      "Data": {
+        "active": true,
+        "id": 1,
+        "name": "John Doe"
+      },
+      "OldData": null,
+      "Timestamp": "2025-02-10T12:27:40.7798653+01:00"
+    }
+  ]
+}
