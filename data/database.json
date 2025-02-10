@@ -21,6 +21,11 @@
           "active": true,
           "id": 1,
           "name": "John Doe"
+        },
+        {
+          "active": true,
+          "id": 1,
+          "name": "John Doe"
         }
       ]
     }
@@ -35,7 +40,18 @@
         "name": "John Doe"
       },
       "OldData": null,
-      "Timestamp": "2025-02-10T12:27:40.7798653+01:00"
+      "Timestamp": "2025-02-10T12:54:33.3636093+01:00"
+    },
+    {
+      "Type": "insert",
+      "TableName": "users",
+      "Data": {
+        "active": true,
+        "id": 1,
+        "name": "John Doe"
+      },
+      "OldData": null,
+      "Timestamp": "2025-02-10T12:58:21.4465424+01:00"
     }
   ]
 }
