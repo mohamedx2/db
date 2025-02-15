@@ -18,6 +18,14 @@ async function main() {
             active: true
         });
 
+        // Add update example
+        console.log('Updating data...');
+        const updated = await db.update('users', 
+            { name: 'John Doe' },  // where clause
+            { active: false }      // updates
+        );
+        console.log(`Updated ${updated} rows`);
+
         console.log('Querying data...');
         const results = await db.select('users', { active: true });
         console.log('Query results:', results);

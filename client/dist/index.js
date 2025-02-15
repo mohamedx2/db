@@ -59,6 +59,18 @@ class DBClient {
         }
         return response.json();
     }
+    async update(tableName, where, updates) {
+        const response = await (0, node_fetch_1.default)(`${this.baseURL}/tables/${tableName}/rows`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ where, updates })
+        });
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        const result = await response.json();
+        return result.updated;
+    }
 }
 exports.DBClient = DBClient;
 exports.default = DBClient;

@@ -116,7 +116,13 @@ func (t *Table) Update(conditions map[string]interface{}, updates map[string]int
 	updated := 0
 	for i, row := range t.Rows {
 		if matchConditions(row, conditions) {
-			// Validate new values
+			// Store old data for history
+			oldData := make(Row)
+			for k, v := range row {
+				oldData[k] = v
+			}
+
+			// Create new row with updates
 			newRow := make(Row)
 			for k, v := range row {
 				newRow[k] = v
@@ -127,10 +133,27 @@ func (t *Table) Update(conditions map[string]interface{}, updates map[string]int
 				}
 				newRow[k] = v
 			}
+
 			t.Rows[i] = newRow
 			updated++
+
+			// Add to history
+			t.db.history.AddOperation(Operation{
+				Type:      "update",
+				TableName: t.Name,
+				Data:      newRow,
+				OldData:   oldData,
+			})
 		}
 	}
+
+	// Save changes to disk
+	if updated > 0 {
+		if err := t.db.save(); err != nil {
+			return 0, err
+		}
+	}
+
 	return updated, nil
 }
 

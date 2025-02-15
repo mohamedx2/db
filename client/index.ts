@@ -70,6 +70,21 @@ export class DBClient {
 
     return response.json();
   }
+
+  async update(tableName: string, where: Row, updates: Row): Promise<number> {
+    const response = await fetch(`${this.baseURL}/tables/${tableName}/rows`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ where, updates })
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const result = await response.json();
+    return result.updated;
+  }
 }
 
 export default DBClient;

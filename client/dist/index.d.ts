@@ -11,5 +11,6 @@ export declare class DBClient {
     createTable(name: string, columns: Column[]): Promise<void>;
     insert(tableName: string, row: Row): Promise<void>;
     select(tableName: string, conditions?: Row): Promise<Row[]>;
+    update(tableName: string, where: Row, updates: Row): Promise<number>;
 }
 export default DBClient;
